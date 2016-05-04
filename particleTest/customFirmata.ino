@@ -33,11 +33,6 @@
   */
 
 #include "application.h"
-#include "neopixel.h"
-
-// UTIL : screen /dev/tty.usbmodem1411 115200
-//  particle compile p firmware/ --saveTo firmware.bin
-// particle flash --usb firmware.bin
 
 #define DEBUG 1
 #define PORT 48879
@@ -202,17 +197,15 @@ unsigned long SerialSpeed[] = {
   unsigned long sampleInterval = 100;
 #endif
 
+
+SYSTEM_MODE(MANUAL);
+
 /* i2c data */
 struct I2CDevice {
   byte address;
   int reg;
   byte bytes;
 };
-
-
-
-
-
 
 /* Track I2C continuous read devices */
 I2CDevice i2cDevices[MAX_I2C_READ_CONTINUOUS_DEVICES];
@@ -276,19 +269,6 @@ void send(int action, int pinOrPort, int pinOrPortValue) {
 
   server.write(buf, 4);
 }
-SYSTEM_MODE(MANUAL);
-
-/*** NEOPIXEL PART  ***/
-// IMPORTANT: Set pixel COUNT, PIN and TYPE
-#define PIXEL_PIN 2
-#define PIXEL_COUNT 60
-#define PIXEL_TYPE WS2812B
-
-
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
-uint32_t neoMagenta = strip.Color(200, 0, 255);
-uint32_t neoBlack = strip.Color(0, 0, 0);
-uint32_t neoColor = neoBlack ;
 
 void setup() {
 
@@ -297,9 +277,6 @@ void setup() {
   #if DEBUG
   Serial.begin(115200);
   #endif
-
-  strip.begin();
-  strip.show();
 
   WiFi.setCredentials("THESPIS", "thespisrouter");
   WiFi.connect();
@@ -311,9 +288,6 @@ void setup() {
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
   Particle.variable("endpoint", ipAddress, STRING);
-
-
-
 }
 
 void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
@@ -598,7 +572,6 @@ void restore() {
 
 void processInput() {
   int pin, mode, val, address, reg, delayTime, dataLength;
-
   int byteCount = bytesRead;
 
   unsigned long us;
@@ -706,25 +679,7 @@ void processInput() {
         Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
-
-        if(pin != 2){
-          digitalWrite(pin, val);
-        }else{/*
-          if(val = 1){
-            Serial.print (" Hello Value is 1 on pin :  ");
-            Serial.println(pin);
-            neoColor = neoMagenta;
-          }else if(val = 0){
-            Serial.print (" Hello  There Value is 0 ");
-            Serial.println(pin);
-            neoColor = neoBlack;
-          }
-          for(int i=0; i<strip.numPixels(); i++) {
-            strip.setPixelColor(i,neoColor);
-          }*/
-          strip.setPixelColor(0,neoMagenta);
-          strip.setPixelColor(1,neoMagenta);
-        }
+        digitalWrite(pin, val);
         break;
 
       case ANALOG_WRITE:  // analogWrite
@@ -828,133 +783,6 @@ void processInput() {
           sampleInterval = 20;
         }
         break;
-
-      // // Serial API
-      // case SERIAL_BEGIN:  // serial.begin
-      //   type = cached[1];
-      //   speed = cached[2];
-      //   if (type == 0) {
-      //     Serial.begin(SerialSpeed[speed]);
-      //   } else {
-      //     Serial1.begin(SerialSpeed[speed]);
-      //   }
-      //   break;
-
-      // case SERIAL_END:  // serial.end
-      //   type = cached[1];
-      //   if (type == 0) {
-      //     Serial.end();
-      //   } else {
-      //     Serial1.end();
-      //   }
-      //   break;
-
-      // case SERIAL_PEEK:  // serial.peek
-      //   type = cached[1];
-      //   if (type == 0) {
-      //     val = Serial.peek();
-      //   } else {
-      //     val = Serial1.peek();
-      //   }
-      //   send(0x07, type, val);
-      //   break;
-
-      // case SERIAL_AVAILABLE:  // serial.available()
-      //   type = cached[1];
-      //   if (type == 0) {
-      //     val = Serial.available();
-      //   } else {
-      //     val = Serial1.available();
-      //   }
-      //   send(0x07, type, val);
-      //   break;
-
-      // case SERIAL_WRITE:  // serial.write
-      //   type = cached[1];
-      //   len = cached[2];
-
-      //   for (i = 0; i < len; i++) {
-      //     if (type == 0) {
-      //       Serial.write(client.read());
-      //     } else {
-      //       Serial1.write(client.read());
-      //     }
-      //   }
-      //   break;
-
-      // case SERIAL_READ: // serial.read
-      //   type = cached[1];
-      //   if (type == 0) {
-      //     val = Serial.read();
-      //   } else {
-      //     val = Serial1.read();
-      //   }
-      //   send(0x16, type, val);
-      //   break;
-
-      // case SERIAL_FLUSH: // serial.flush
-      //   type = cached[1];
-      //   if (type == 0) {
-      //     Serial.flush();
-      //   } else {
-      //     Serial1.flush();
-      //   }
-      //   break;
-
-      // SPI API
-      // case SPI_BEGIN:  // SPI.begin
-      //   SPI.begin();
-      //   break;
-
-      // case SPI_END:  // SPI.end
-      //   SPI.end();
-      //   break;
-
-      // case SPI_SET_BIT_ORDER:  // SPI.setBitOrder
-      //   type = cached[1];
-      //   SPI.setBitOrder((type ? MSBFIRST : LSBFIRST));
-      //   break;
-
-      // case SPI_SET_CLOCK:  // SPI.setClockDivider
-      //   val = cached[1];
-      //   if (val == 0) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV2);
-      //   } else if (val == 1) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV4);
-      //   } else if (val == 2) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV8);
-      //   } else if (val == 3) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV16);
-      //   } else if (val == 4) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV32);
-      //   } else if (val == 5) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV64);
-      //   } else if (val == 6) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV128);
-      //   } else if (val == 7) {
-      //     SPI.setClockDivider(SPI_CLOCK_DIV256);
-      //   }
-      //   break;
-
-      // case SPI_SET_DATA_MODE:  // SPI.setDataMode
-      //   val = cached[1];
-      //   if (val == 0) {
-      //     SPI.setDataMode(SPI_MODE0);
-      //   } else if (val == 1) {
-      //     SPI.setDataMode(SPI_MODE1);
-      //   } else if (val == 2) {
-      //     SPI.setDataMode(SPI_MODE2);
-      //   } else if (val == 3) {
-      //     SPI.setDataMode(SPI_MODE3);
-      //   }
-      //   break;
-
-      // case SPI_TRANSFER:  // SPI.transfer
-      //   val = cached[1];
-      //   val = SPI.transfer(val);
-      //   server.write(0x24);
-      //   server.write(val);
-      //   break;
 
       // Wire API
       case I2C_CONFIG:
@@ -1128,9 +956,7 @@ void processInput() {
 }
 
 void loop() {
-
   if (client.connected()) {
-
 
     if (!isConnected) {
       restore();
@@ -1200,5 +1026,4 @@ void loop() {
     // If no client is yet connected, check for a new connection
     client = server.available();
   }
-
 }

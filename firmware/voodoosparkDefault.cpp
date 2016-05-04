@@ -33,13 +33,8 @@
   */
 
 #include "application.h"
-#include "neopixel.h"
 
-// UTIL : screen /dev/tty.usbmodem1411 115200
-//  particle compile p firmware/ --saveTo firmware.bin
-// particle flash --usb firmware.bin
-
-#define DEBUG 1
+#define DEBUG 0
 #define PORT 48879
 #define MAX_DATA_BYTES 128
 #define MAX_I2C_READ_CONTINUOUS_DEVICES 8
@@ -209,11 +204,6 @@ struct I2CDevice {
   byte bytes;
 };
 
-
-
-
-
-
 /* Track I2C continuous read devices */
 I2CDevice i2cDevices[MAX_I2C_READ_CONTINUOUS_DEVICES];
 
@@ -278,18 +268,6 @@ void send(int action, int pinOrPort, int pinOrPortValue) {
 }
 SYSTEM_MODE(MANUAL);
 
-/*** NEOPIXEL PART  ***/
-// IMPORTANT: Set pixel COUNT, PIN and TYPE
-#define PIXEL_PIN 2
-#define PIXEL_COUNT 60
-#define PIXEL_TYPE WS2812B
-
-
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
-uint32_t neoMagenta = strip.Color(200, 0, 255);
-uint32_t neoBlack = strip.Color(0, 0, 0);
-uint32_t neoColor = neoBlack ;
-
 void setup() {
 
   server.begin();
@@ -297,13 +275,9 @@ void setup() {
   #if DEBUG
   Serial.begin(115200);
   #endif
-
-  strip.begin();
-  strip.show();
-
   WiFi.setCredentials("THESPIS", "thespisrouter");
   WiFi.connect();
-
+  
   IPAddress ip = WiFi.localIP();
   static char ipAddress[24] = "";
 
@@ -311,9 +285,6 @@ void setup() {
   sprintf(ipAddress, "%d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
 
   Particle.variable("endpoint", ipAddress, STRING);
-
-
-
 }
 
 void readAndReportI2cData(byte address, int theRegister, byte numBytes) {
@@ -598,7 +569,6 @@ void restore() {
 
 void processInput() {
   int pin, mode, val, address, reg, delayTime, dataLength;
-
   int byteCount = bytesRead;
 
   unsigned long us;
@@ -706,25 +676,7 @@ void processInput() {
         Serial.print("VALUE: ");
         Serial.println(val, HEX);
         #endif
-
-        if(pin != 2){
-          digitalWrite(pin, val);
-        }else{/*
-          if(val = 1){
-            Serial.print (" Hello Value is 1 on pin :  ");
-            Serial.println(pin);
-            neoColor = neoMagenta;
-          }else if(val = 0){
-            Serial.print (" Hello  There Value is 0 ");
-            Serial.println(pin);
-            neoColor = neoBlack;
-          }
-          for(int i=0; i<strip.numPixels(); i++) {
-            strip.setPixelColor(i,neoColor);
-          }*/
-          strip.setPixelColor(0,neoMagenta);
-          strip.setPixelColor(1,neoMagenta);
-        }
+        digitalWrite(pin, val);
         break;
 
       case ANALOG_WRITE:  // analogWrite
@@ -1128,9 +1080,7 @@ void processInput() {
 }
 
 void loop() {
-
   if (client.connected()) {
-
 
     if (!isConnected) {
       restore();
@@ -1200,5 +1150,4 @@ void loop() {
     // If no client is yet connected, check for a new connection
     client = server.available();
   }
-
 }
